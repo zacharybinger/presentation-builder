@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An interactive introduction to self-attention in transformers."
+    />
+    <title>Attention</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./attention.css" />
+  </head>
+  <body class="attention-slide">
+    <main class="deck" aria-labelledby="slide-title">
+      <nav class="chapter-nav" aria-label="Presentation chapters">
+        <a class="chapter" href="./index.html?step=1">
+          <span>01</span>
+          Neural networks
+        </a>
+        <a class="chapter" href="./tokens.html?step=1">
+          <span>02</span>
+          Tokens
+        </a>
+        <a
+          class="chapter active"
+          href="./attention.html?step=1"
+          aria-current="page"
+        >
+          <span>03</span>
+          Attention
+        </a>
+        <a class="chapter" href="./training.html?step=1">
+          <span>04</span>
+          Training
+        </a>
+      </nav>
+
+      <header class="slide-header">
+        <p class="eyebrow">Self-attention</p>
+        <h1 id="slide-title">A token’s meaning depends on its context.</h1>
+        <p class="step-copy" id="step-copy" aria-live="polite"></p>
+      </header>
+
+      <section class="visual-shell attention-shell" aria-label="Self-attention demonstration">
+        <div class="attention-stage">
+          <div class="stage-heading">
+            <div>
+              <p class="stage-label" id="stage-label">A single attention operation</p>
+              <p id="stage-caption">Which earlier words help explain “it”?</p>
+            </div>
+            <div class="role-legend" id="role-legend" aria-label="Query key and value roles">
+              <span class="query"><i>Q</i> what am I looking for?</span>
+              <span class="key"><i>K</i> what do I contain?</span>
+              <span class="value"><i>V</i> what information can I contribute?</span>
+            </div>
+          </div>
+
+          <svg
+            id="attention-diagram"
+            class="attention-diagram"
+            viewBox="0 0 850 340"
+            role="img"
+            aria-labelledby="attention-title attention-description"
+          >
+            <title id="attention-title">Self-attention over a short sentence</title>
+            <desc id="attention-description">
+              The token it compares its query with the keys of tokens available
+              earlier in the sequence. Stronger attention connections are drawn
+              thicker. Token values are then combined into a context-aware
+              representation for it.
+            </desc>
+            <defs>
+              <marker
+                id="attention-arrow"
+                markerWidth="7"
+                markerHeight="7"
+                refX="6"
+                refY="3.5"
+                orient="auto"
+              >
+                <path d="M0,0 L7,3.5 L0,7 Z"></path>
+              </marker>
+            </defs>
+            <g id="attention-lines" aria-hidden="true"></g>
+            <g id="token-nodes"></g>
+            <g id="context-output" aria-hidden="true">
+              <path
+                class="output-arrow"
+                d="M 700 198 C 700 220, 700 230, 700 247"
+              ></path>
+              <rect x="636" y="254" width="128" height="58" rx="13"></rect>
+              <text class="output-main" x="700" y="277">contextual “it”</text>
+              <text class="output-sub" x="700" y="297">meaning: the animal</text>
+            </g>
+          </svg>
+
+          <div class="attention-scale" id="attention-scale" aria-hidden="true">
+            <span>less attention</span>
+            <i></i>
+            <span>more attention</span>
+          </div>
+
+          <section class="decoder-view" id="decoder-view" aria-label="Next-token decoding">
+            <div class="prompt-line" aria-label="Current token sequence">
+              <span>The</span>
+              <span>animal</span>
+              <span>was</span>
+              <span>tired,</span>
+              <span>so</span>
+              <span>it</span>
+              <strong id="sampled-token">?</strong>
+            </div>
+
+            <div class="output-pipeline" id="output-pipeline" aria-label="Transformer output pipeline">
+              <div class="pipeline-card context">
+                <small>final position</small>
+                <strong>hidden state</strong>
+                <code>h<sub>it</sub></code>
+              </div>
+              <span class="pipeline-arrow">→</span>
+              <div class="pipeline-card blocks">
+                <small>after all blocks</small>
+                <strong>final norm</strong>
+                <code>norm(h)</code>
+              </div>
+              <span class="pipeline-arrow">→</span>
+              <div class="pipeline-card projection">
+                <small>output head</small>
+                <strong>vocabulary projection</strong>
+                <code>W<sub>vocab</sub>h</code>
+              </div>
+              <span class="pipeline-arrow">→</span>
+              <div class="pipeline-card logits">
+                <small>one score/token</small>
+                <strong>logits</strong>
+                <code>[4.6, 3.8, …]</code>
+              </div>
+            </div>
+
+            <div class="distribution-panel" id="distribution-panel">
+              <div class="distribution-heading">
+                <div>
+                  <p class="stage-label">Candidate next tokens</p>
+                  <p>Filtered probabilities after softmax</p>
+                </div>
+                <div class="distribution-legend">
+                  <span><i class="eligible"></i>eligible</span>
+                  <span><i class="filtered"></i>filtered out</span>
+                </div>
+              </div>
+              <div class="candidate-list" id="candidate-list"></div>
+            </div>
+
+            <div class="sampling-controls" id="sampling-controls">
+              <div class="control-group">
+                <span>Temperature</span>
+                <div>
+                  <button type="button" data-temperature="0.5">0.5</button>
+                  <button class="active" type="button" data-temperature="1">1.0</button>
+                  <button type="button" data-temperature="1.5">1.5</button>
+                </div>
+              </div>
+              <div class="control-group">
+                <span>Top-k</span>
+                <div>
+                  <button type="button" data-top-k="3">3</button>
+                  <button class="active" type="button" data-top-k="5">5</button>
+                </div>
+              </div>
+              <div class="control-group">
+                <span>Top-p</span>
+                <div>
+                  <button type="button" data-top-p="0.8">0.80</button>
+                  <button class="active" type="button" data-top-p="0.95">0.95</button>
+                </div>
+              </div>
+              <button class="sample-button" id="sample-button" type="button">
+                Sample next token
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <aside class="concept-card attention-concept-card">
+          <p class="concept-kicker" id="concept-kicker"></p>
+          <div class="attention-equation" id="equation" aria-live="polite"></div>
+          <p class="concept-detail" id="concept-detail"></p>
+
+          <div class="head-panel" id="head-panel">
+            <p>Switch attention head:</p>
+            <div class="head-buttons">
+              <button
+                class="head-button active"
+                type="button"
+                data-head="reference"
+                aria-pressed="true"
+              >
+                Reference
+              </button>
+              <button
+                class="head-button"
+                type="button"
+                data-head="grammar"
+                aria-pressed="false"
+              >
+                Grammar
+              </button>
+              <button
+                class="head-button"
+                type="button"
+                data-head="position"
+                aria-pressed="false"
+              >
+                Position
+              </button>
+            </div>
+            <div class="head-summary">
+              <span id="head-label">Reference head</span>
+              <strong id="head-result">it → animal</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="controls">
+        <button id="previous" type="button" aria-label="Previous reveal">
+          <span aria-hidden="true">←</span>
+          Back
+        </button>
+        <div class="progress" aria-label="Presentation progress">
+          <span id="indicator">1 / 9</span>
+          <div class="progress-track" aria-hidden="true">
+            <i id="progress-fill"></i>
+          </div>
+        </div>
+        <button id="next" type="button" aria-label="Next reveal">
+          Next
+          <span aria-hidden="true">→</span>
+        </button>
+      </footer>
+    </main>
+
+    <script type="module" src="./attention.js"></script>
+  </body>
+</html>

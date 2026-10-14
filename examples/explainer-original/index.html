@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An interactive introduction to neural network basics."
+    />
+    <title>Neural Network Basics</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="deck" aria-labelledby="slide-title">
+      <nav class="chapter-nav" aria-label="Presentation chapters">
+        <a class="chapter active" href="?step=1" aria-current="page">
+          <span>01</span>
+          Neural networks
+        </a>
+        <a class="chapter" href="./tokens.html?step=1">
+          <span>02</span>
+          Tokens
+        </a>
+        <a class="chapter" href="./attention.html?step=1">
+          <span>03</span>
+          Attention
+        </a>
+        <a class="chapter" href="./training.html?step=1">
+          <span>04</span>
+          Training
+        </a>
+      </nav>
+
+      <header class="slide-header">
+        <p class="eyebrow">Neural network basics</p>
+        <h1 id="slide-title">A network learns by tuning connections.</h1>
+        <p class="step-copy" id="step-copy" aria-live="polite"></p>
+      </header>
+
+      <section class="visual-shell" aria-label="Neural network demonstration">
+        <div class="diagram-region">
+          <div class="layer-label input-label">Inputs</div>
+          <div class="layer-label hidden-label">Hidden layer</div>
+          <div class="layer-label output-label">Output</div>
+
+          <svg
+            id="network"
+            class="network"
+            viewBox="0 0 820 390"
+            role="img"
+            aria-labelledby="network-title network-description"
+          >
+            <title id="network-title">A small feed-forward neural network</title>
+            <desc id="network-description">
+              Three input values connect to four hidden neurons, which connect
+              to one output. Advancing the presentation reveals how the network
+              combines inputs and learns by changing connection weights.
+            </desc>
+            <g id="connections" aria-hidden="true"></g>
+            <g id="nodes"></g>
+          </svg>
+
+          <div class="input-example" id="input-example" aria-hidden="true">
+            <span>Example input</span>
+            <strong>“Is this email spam?”</strong>
+          </div>
+        </div>
+
+        <aside class="concept-card" id="concept-card">
+          <p class="concept-kicker" id="concept-kicker"></p>
+          <div class="equation" id="equation" aria-live="polite"></div>
+          <p class="concept-detail" id="concept-detail"></p>
+          <div class="weight-key" id="weight-key">
+            <span><i class="line thin"></i> weak signal</span>
+            <span><i class="line thick"></i> strong signal</span>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="controls">
+        <button id="previous" type="button" aria-label="Previous reveal">
+          <span aria-hidden="true">←</span>
+          Back
+        </button>
+        <div class="progress" aria-label="Presentation progress">
+          <span id="indicator">1 / 5</span>
+          <div class="progress-track" aria-hidden="true">
+            <i id="progress-fill"></i>
+          </div>
+        </div>
+        <button id="next" type="button" aria-label="Next reveal">
+          Next
+          <span aria-hidden="true">→</span>
+        </button>
+      </footer>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

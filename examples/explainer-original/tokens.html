@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An interactive introduction to tokens, embeddings, and cosine similarity."
+    />
+    <title>Tokens &amp; Embeddings</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./tokens.css" />
+  </head>
+  <body class="tokens-slide">
+    <main class="deck" aria-labelledby="slide-title">
+      <nav class="chapter-nav" aria-label="Presentation chapters">
+        <a class="chapter" href="./index.html?step=1">
+          <span>01</span>
+          Neural networks
+        </a>
+        <a
+          class="chapter active"
+          href="./tokens.html?step=1"
+          aria-current="page"
+        >
+          <span>02</span>
+          Tokens
+        </a>
+        <a class="chapter" href="./attention.html?step=1">
+          <span>03</span>
+          Attention
+        </a>
+        <a class="chapter" href="./training.html?step=1">
+          <span>04</span>
+          Training
+        </a>
+      </nav>
+
+      <header class="slide-header">
+        <p class="eyebrow">Tokens &amp; embeddings</p>
+        <h1 id="slide-title">Language becomes pieces a model can process.</h1>
+        <p class="step-copy" id="step-copy" aria-live="polite"></p>
+      </header>
+
+      <section class="visual-shell token-shell" aria-label="Token and embedding demonstration">
+        <div class="token-stage" id="token-stage">
+          <section class="tokenizer-view" id="tokenizer-view" aria-label="Tokenization example">
+            <p class="stage-label">Input text</p>
+            <p class="source-sentence">
+              The puppy was
+              <span class="source-word">unbelievable</span>.
+            </p>
+
+            <div class="flow-arrow" aria-hidden="true">↓</div>
+
+            <div class="token-strip" aria-label="Resulting tokens">
+              <span class="token" style="--delay: 0ms">
+                <b>The</b><small>464</small>
+              </span>
+              <span class="token space-token" style="--delay: 70ms">
+                <b> puppy</b><small>27164</small>
+              </span>
+              <span class="token space-token" style="--delay: 140ms">
+                <b> was</b><small>373</small>
+              </span>
+              <span class="token space-token subword" style="--delay: 210ms">
+                <b> un</b><small>555</small>
+              </span>
+              <span class="token subword" style="--delay: 280ms">
+                <b>believ</b><small>15248</small>
+              </span>
+              <span class="token subword" style="--delay: 350ms">
+                <b>able</b><small>540</small>
+              </span>
+              <span class="token punctuation" style="--delay: 420ms">
+                <b>.</b><small>13</small>
+              </span>
+            </div>
+
+            <p class="token-note">
+              Tokens are reusable text fragments—not always complete words.
+            </p>
+          </section>
+
+          <section class="lookup-view" id="lookup-view" aria-label="Embedding lookup example">
+            <p class="stage-label">Embedding lookup table</p>
+            <div class="lookup-grid">
+              <div class="lookup-row" style="--delay: 0ms">
+                <span class="mini-token">puppy</span>
+                <span class="lookup-arrow">→</span>
+                <code>[0.82, −0.14, 0.33, 0.71, …]</code>
+              </div>
+              <div class="lookup-row" style="--delay: 100ms">
+                <span class="mini-token">dog</span>
+                <span class="lookup-arrow">→</span>
+                <code>[0.79, −0.09, 0.38, 0.68, …]</code>
+              </div>
+              <div class="lookup-row" style="--delay: 200ms">
+                <span class="mini-token">truck</span>
+                <span class="lookup-arrow">→</span>
+                <code>[−0.21, 0.77, 0.04, −0.36, …]</code>
+              </div>
+            </div>
+            <p class="dimension-note">
+              Each row is one position in a learned, high-dimensional space.
+            </p>
+          </section>
+
+          <section class="plot-view" id="plot-view" aria-label="Two-dimensional embedding projection">
+            <div class="plot-heading">
+              <div>
+                <p class="stage-label">A 2D projection of token embeddings</p>
+                <p>Nearby directions tend to represent related concepts.</p>
+              </div>
+              <span class="projection-badge">Real embeddings use many more dimensions</span>
+            </div>
+
+            <svg
+              id="embedding-plot"
+              class="embedding-plot"
+              viewBox="0 0 820 340"
+              role="img"
+              aria-labelledby="plot-title plot-description"
+            >
+              <title id="plot-title">Clusters of related token embeddings</title>
+              <desc id="plot-description">
+                Animal, vehicle, fruit, and royal-family tokens form separate
+                clusters. Vectors from the origin compare the directions of
+                selected token embeddings.
+              </desc>
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="7"
+                  refY="4"
+                  orient="auto"
+                >
+                  <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"></path>
+                </marker>
+              </defs>
+              <g class="grid" aria-hidden="true">
+                <line x1="80" y1="285" x2="790" y2="285"></line>
+                <line x1="80" y1="285" x2="80" y2="24"></line>
+                <line x1="80" y1="220" x2="790" y2="220"></line>
+                <line x1="80" y1="155" x2="790" y2="155"></line>
+                <line x1="80" y1="90" x2="790" y2="90"></line>
+                <line x1="250" y1="24" x2="250" y2="285"></line>
+                <line x1="420" y1="24" x2="420" y2="285"></line>
+                <line x1="590" y1="24" x2="590" y2="285"></line>
+                <line x1="760" y1="24" x2="760" y2="285"></line>
+              </g>
+              <g id="comparison-vectors" aria-hidden="true"></g>
+              <g id="plot-points"></g>
+              <g class="origin" transform="translate(80 285)" aria-hidden="true">
+                <circle r="5"></circle>
+                <text x="12" y="17">origin</text>
+              </g>
+            </svg>
+
+            <div class="cluster-legend" aria-label="Token categories">
+              <span class="animals"><i></i>animals</span>
+              <span class="vehicles"><i></i>vehicles</span>
+              <span class="fruit"><i></i>fruit</span>
+              <span class="royalty"><i></i>royalty</span>
+            </div>
+          </section>
+        </div>
+
+        <aside class="concept-card token-concept-card">
+          <p class="concept-kicker" id="concept-kicker"></p>
+          <div class="token-equation" id="equation" aria-live="polite"></div>
+          <p class="concept-detail" id="concept-detail"></p>
+
+          <div class="comparison-panel" id="comparison-panel">
+            <p>Compare from <strong>cat</strong>:</p>
+            <div class="comparison-buttons">
+              <button
+                class="pair-button active"
+                type="button"
+                data-target="dog"
+                aria-pressed="true"
+              >
+                dog
+              </button>
+              <button
+                class="pair-button"
+                type="button"
+                data-target="truck"
+                aria-pressed="false"
+              >
+                truck
+              </button>
+            </div>
+            <div class="similarity-score">
+              <span>cosine similarity</span>
+              <strong id="similarity-score">0.94</strong>
+            </div>
+            <small>Illustrative values for this simplified projection.</small>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="controls">
+        <button id="previous" type="button" aria-label="Previous reveal">
+          <span aria-hidden="true">←</span>
+          Back
+        </button>
+        <div class="progress" aria-label="Presentation progress">
+          <span id="indicator">1 / 5</span>
+          <div class="progress-track" aria-hidden="true">
+            <i id="progress-fill"></i>
+          </div>
+        </div>
+        <button id="next" type="button" aria-label="Next reveal">
+          Next
+          <span aria-hidden="true">→</span>
+        </button>
+      </footer>
+    </main>
+
+    <script type="module" src="./tokens.js"></script>
+  </body>
+</html>

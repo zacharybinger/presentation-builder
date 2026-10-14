@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An interactive introduction to training large language models."
+    />
+    <title>Training</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./training.css" />
+  </head>
+  <body class="training-slide">
+    <main class="deck" aria-labelledby="slide-title">
+      <nav class="chapter-nav" aria-label="Presentation chapters">
+        <a class="chapter" href="./index.html?step=1">
+          <span>01</span>
+          Neural networks
+        </a>
+        <a class="chapter" href="./tokens.html?step=1">
+          <span>02</span>
+          Tokens
+        </a>
+        <a class="chapter" href="./attention.html?step=1">
+          <span>03</span>
+          Attention
+        </a>
+        <a
+          class="chapter active"
+          href="./training.html?step=1"
+          aria-current="page"
+        >
+          <span>04</span>
+          Training
+        </a>
+      </nav>
+
+      <header class="slide-header">
+        <p class="eyebrow">Training</p>
+        <h1 id="slide-title">Training starts with ordinary text.</h1>
+        <p class="step-copy" id="step-copy" aria-live="polite"></p>
+      </header>
+
+      <section class="visual-shell training-shell" aria-label="Language model training demonstration">
+        <div class="training-stage">
+          <section class="data-view" id="data-view" aria-label="Training data preparation">
+            <p class="stage-label">Raw training text</p>
+            <blockquote>
+              “The cat sat on the mat.”
+            </blockquote>
+            <div class="dataset-arrow" aria-hidden="true">↓</div>
+            <div class="tokenized-sentence">
+              <span>The</span>
+              <span>cat</span>
+              <span>sat</span>
+              <span>on</span>
+              <span>the</span>
+              <span>mat</span>
+              <span>.</span>
+            </div>
+
+            <div class="shift-example" id="shift-example">
+              <div class="shift-labels">
+                <span>model sees</span>
+                <span>target is</span>
+              </div>
+              <div class="shift-row input-row">
+                <code>The</code>
+                <code>cat</code>
+                <code>sat</code>
+                <code>on</code>
+                <code>the</code>
+                <code>mat</code>
+              </div>
+              <div class="shift-connectors" aria-hidden="true">
+                <i>↘</i><i>↘</i><i>↘</i><i>↘</i><i>↘</i><i>↘</i>
+              </div>
+              <div class="shift-row target-row">
+                <code>cat</code>
+                <code>sat</code>
+                <code>on</code>
+                <code>the</code>
+                <code>mat</code>
+                <code>.</code>
+              </div>
+            </div>
+          </section>
+
+          <section class="loop-view" id="loop-view" aria-label="Training optimization loop">
+            <div class="training-example">
+              <div class="context-strip">
+                <small>context</small>
+                <code>The cat sat on the</code>
+              </div>
+              <span class="flow-arrow">→</span>
+              <div class="model-box" id="model-box">
+                <small>current weights</small>
+                <strong>Transformer</strong>
+                <code id="weight-value">w = 0.18</code>
+              </div>
+              <span class="flow-arrow">→</span>
+              <div class="prediction-box">
+                <small>next-token prediction</small>
+                <div class="mini-distribution" id="mini-distribution"></div>
+              </div>
+            </div>
+
+            <div class="target-loss-row">
+              <div class="target-card">
+                <small>correct target</small>
+                <strong>mat</strong>
+              </div>
+              <span class="compare-symbol">≠</span>
+              <div class="loss-card" id="loss-card">
+                <small>cross-entropy loss</small>
+                <strong id="loss-value">1.71</strong>
+                <code>−log P(mat)</code>
+              </div>
+            </div>
+
+            <div class="gradient-path" id="gradient-path" aria-hidden="true">
+              <span>loss</span>
+              <i>∂L/∂w</i>
+              <span>gradients flow backward</span>
+              <b>←</b>
+              <span>weights</span>
+            </div>
+
+            <div class="learning-dashboard">
+              <div class="loss-chart">
+                <div class="chart-heading">
+                  <span>Training loss</span>
+                  <strong id="step-count">step 0</strong>
+                </div>
+                <svg
+                  viewBox="0 0 360 90"
+                  role="img"
+                  aria-label="Training loss decreasing over optimization steps"
+                >
+                  <line x1="10" y1="76" x2="350" y2="76"></line>
+                  <line x1="10" y1="10" x2="10" y2="76"></line>
+                  <path id="loss-curve" d=""></path>
+                  <g id="loss-points"></g>
+                </svg>
+              </div>
+              <button class="update-button" id="update-button" type="button">
+                Run optimizer step
+              </button>
+              <div class="scale-stats" id="scale-stats">
+                <span><strong>trillions</strong> training tokens</span>
+                <span><strong>millions</strong> optimizer steps</span>
+                <span><strong>thousands</strong> accelerator chips</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="phases-view" id="phases-view" aria-label="Language model training phases">
+            <div class="phase-cards">
+              <button
+                class="phase-card active"
+                type="button"
+                data-phase="pretraining"
+                aria-pressed="true"
+              >
+                <span>1</span>
+                <small>foundation</small>
+                <strong>Pretraining</strong>
+                <p>predict the next token</p>
+              </button>
+              <i>→</i>
+              <button
+                class="phase-card"
+                type="button"
+                data-phase="instruction"
+                aria-pressed="false"
+              >
+                <span>2</span>
+                <small>behavior</small>
+                <strong>Instruction tuning</strong>
+                <p>learn from demonstrations</p>
+              </button>
+              <i>→</i>
+              <button
+                class="phase-card"
+                type="button"
+                data-phase="preference"
+                aria-pressed="false"
+              >
+                <span>3</span>
+                <small>alignment</small>
+                <strong>Preference tuning</strong>
+                <p>favor better responses</p>
+              </button>
+            </div>
+
+            <div class="phase-detail" id="phase-detail">
+              <div>
+                <small>data</small>
+                <strong id="phase-data">massive unlabeled text corpora</strong>
+              </div>
+              <div>
+                <small>objective</small>
+                <strong id="phase-objective">minimize next-token loss</strong>
+              </div>
+              <div>
+                <small>result</small>
+                <strong id="phase-result">general language and world patterns</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="concept-card training-concept-card">
+          <p class="concept-kicker" id="concept-kicker"></p>
+          <div class="training-equation" id="equation" aria-live="polite"></div>
+          <p class="concept-detail" id="concept-detail"></p>
+          <div class="loop-summary" id="loop-summary">
+            <span>predict</span><i>→</i>
+            <span>measure</span><i>→</i>
+            <span>update</span><i>→</i>
+            <span>repeat</span>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="controls">
+        <button id="previous" type="button" aria-label="Previous reveal">
+          <span aria-hidden="true">←</span>
+          Back
+        </button>
+        <div class="progress" aria-label="Presentation progress">
+          <span id="indicator">1 / 8</span>
+          <div class="progress-track" aria-hidden="true">
+            <i id="progress-fill"></i>
+          </div>
+        </div>
+        <button id="next" type="button" aria-label="Next reveal">
+          Next
+          <span aria-hidden="true">→</span>
+        </button>
+      </footer>
+    </main>
+
+    <script type="module" src="./training.js"></script>
+  </body>
+</html>

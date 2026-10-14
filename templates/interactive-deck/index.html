@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f2e9" />
+    <meta name="description" content="An interactive, browser-native presentation starter." />
+    <title>__DECK_TITLE__</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="viewport" aria-label="Presentation viewport">
+      <main id="stage" class="stage" data-theme="__DEFAULT_THEME__" aria-label="Interactive presentation">
+        <div class="noise" aria-hidden="true"></div>
+        <header class="topbar">
+          <div class="brand"><span class="brand-mark">✳</span><span>FIELDNOTES <strong> / </strong> <span class="brand-tail">LIVE DECK</span></span></div>
+          <nav id="chapter-nav" class="chapter-nav" aria-label="Presentation chapters"></nav>
+          <label class="theme-picker" data-no-advance>LOOK
+            <select id="theme-select" aria-label="Presentation visual theme">
+              <option value="signal">Signal</option>
+              <option value="explainer">Explainer</option>
+              <option value="nocturne">Nocturne</option>
+            </select>
+          </label>
+        </header>
+        <section class="slide-content" aria-live="off">
+          <div class="headline-block">
+            <div class="eyebrow"><span id="chapter-number">01</span><span class="eyebrow-line"></span><span id="eyebrow-text">The premise</span></div>
+            <h1 id="slide-heading"> </h1>
+            <p id="step-copy" class="step-copy" aria-live="polite"></p>
+          </div>
+          <div id="scene-root" class="scene-root"></div>
+        </section>
+        <footer class="footer">
+          <div class="footer-left"><span class="foot-symbol">◉</span><span>IDEAS → INTERACTIONS</span><span class="foot-hint">ARROW KEYS TO EXPLORE</span></div>
+          <div class="footer-right">
+            <div class="progress-readout" aria-label="Presentation progress"><span id="progress-label">01 / 05</span><span class="progress-rule"><i id="progress-fill"></i></span></div>
+            <button type="button" id="previous" class="nav-control" aria-label="Previous reveal">←</button>
+            <button type="button" id="next" class="nav-control nav-next" aria-label="Next reveal">→</button>
+            <button type="button" id="fullscreen" class="fullscreen-control" aria-label="Toggle fullscreen" title="Fullscreen (F)">⤢</button>
+          </div>
+        </footer>
+      </main>
+    </div>
+    <script src="./deck.js" type="module"></script>
+  </body>
+</html>
