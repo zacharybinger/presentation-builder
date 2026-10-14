@@ -18,7 +18,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True, help="New empty target folder")
     args = parser.parse_args()
     output = args.output.expanduser().resolve()
-    if output.exists() and any(output.iterdir()):
+    if output.is_dir() and any(output.iterdir()):
         parser.error(f"Output folder not empty: {output} (refusing to overwrite)")
     if output.exists() and not output.is_dir():
         parser.error(f"Output path is not a directory: {output}")

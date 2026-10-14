@@ -1,6 +1,6 @@
 # Design DNA: a repeatable design identity, not a borrowed theme
 
-**Origin:** [zanwei/design-dna](https://github.com/zanwei/design-dna), especially its `SKILL.md` and `references/schema.md`, plus [AThevon/genjutsu](https://github.com/AThevon/genjutsu) `paint` / `cast`. Concepts adapted here; these upstream skills are not bundled or required.
+**Origin:** [zanwei/design-dna](https://github.com/zanwei/design-dna), especially its `SKILL.md` and `references/schema.md`, plus [AThevon/genjutsu](https://github.com/AThevon/genjutsu) `paint` / `cast`. Concepts adapted here; selected reference excerpts are bundled in [the local library](RESOURCE_LIBRARY.md), without requiring those skills.
 
 ## Three separate dimensions
 
@@ -49,7 +49,7 @@ For each complex widget/reveal: write an **interaction thesis**: `When the prese
 }
 ```
 
-Profile is an original *small subset*, not the full upstream Design DNA schema. If the user's task requires round-tripping a full upstream profile, load its current `references/schema.md` and use the complete specification.
+Profile is an original *small subset*, not the full upstream Design DNA schema. If the user's task requires round-tripping a full upstream profile, read the [bundled full schema](upstream/design-dna/schema.md) and use the complete specification.
 
 ## Art-direction quality gate
 

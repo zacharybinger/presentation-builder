@@ -1,2 +1,5 @@
+# Python 3.10+. Viewing the finished HTML requires none of these.
 playwright>=1.50,<2
 pypdf>=5,<8
+pillow>=11,<13
+PyMuPDF>=1.25,<2

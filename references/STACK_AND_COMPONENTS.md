@@ -10,7 +10,7 @@
 
 ## shadcn/ui — https://ui.shadcn.com/
 
-Use it for well-tested interaction semantics: Dialog, Slider, Tooltip, Popover, Tabs, Toggle Group, Command, or Switch. shadcn is **component source brought into your project**, not one all-inclusive UI runtime. To bootstrap in Vite use the current setup flow in https://ui.shadcn.com/docs/installation/vite (`npx shadcn@latest init -t vite`) and add relevant controls (`npx shadcn@latest add slider tabs tooltip`). Keep keyboard focus and label behavior. Remove default dashboard-like chrome and restyle variables to your presentation direction. A control belongs only if the audience can actually change something.
+Use it for well-tested interaction semantics: Dialog, Slider, Tooltip, Popover, Tabs, Toggle Group, Command, or Switch. shadcn is **component source brought into your project**, not one all-inclusive UI runtime. To bootstrap in Vite use the current setup flow in https://ui.shadcn.com/docs/installation/vite and add only the relevant controls using that version’s documented commands. Keep keyboard focus and label behavior. Remove default dashboard-like chrome and restyle variables to your presentation direction. A control belongs only if the audience can actually change something.
 
 ## 21st.dev — https://21st.dev/
 
@@ -26,7 +26,7 @@ Selection checklist:
 
 ## thinking-orbs — https://github.com/Jakubantalik/thinking-orbs
 
-Use a `ThinkingOrb` for a real process/state (agent solving, searching, listening, etc). Library is canvas 2D, not Three.js; published as `thinking-orbs` with React peer dependency. Current upstream examples:
+Use a `ThinkingOrb` for a real process/state (agent solving, searching, listening, etc). Library is canvas 2D, not Three.js; published as `thinking-orbs` with React peer dependency. Example integration (check the installed version’s API before use):
 
 ```tsx
 import { ThinkingOrb } from 'thinking-orbs';
@@ -39,7 +39,7 @@ export function LiveReasoningState({ running }: { running: boolean }) {
 }
 ```
 
-Only show a claimed agent state when real application state supports it. Prefer static annotation for purely conceptual slides. The upstream package supports reduced motion and off-screen pausing.
+Only show a claimed agent state when real application state supports it. Prefer static annotation for purely conceptual slides. Verify reduced motion and off-screen pausing in the version used by the deck.
 
 ## Three.js and R3F
 
@@ -51,4 +51,4 @@ Use only for a **separate timed render** when the requested artifact includes a 
 
 ## Source constraints and security
 
-Pin versions, review license, avoid remote CDN fonts/scripts/media for on-prem and live talks, provide attributions for image/illustration/code assets, sanitize imported Markdown/HTML, do not execute arbitrary JS from user documents, and never paste credentials into deck assets. Exportable HTML must use local assets or explicit approved external URLs with an offline fallback.
+Pin versions, review license, avoid remote CDN fonts/scripts/media for on-prem and live talks, provide attributions for image/illustration/code assets, sanitize imported Markdown/HTML, do not execute arbitrary JS from user documents, and never paste credentials into deck assets. The default standalone HTML embeds all runtime assets. External citation links are fine; runtime resources must work with the network disabled.

@@ -11,7 +11,7 @@
 
 ## Narrative rules
 
-- One slide = one assertion a listener can repeat, not a generic title like "Overview".
+- Give each slide a clear purpose. Setup and definitions can use direct topic titles; use a factual takeaway when the evidence supports one.
 - One reveal = one added causal link, comparison, highlight, demonstration, or result. A reveal that only animates arbitrary decoration does not count.
 - Prefer a persistent scene that becomes more sophisticated over time to five disconnected diagrams.
 - A concrete example should remain visible while abstract terms are introduced.
@@ -42,14 +42,14 @@ When a user hands you raw notes, infer and write an internal brief:
 ```yaml
 purpose: explain | persuade | demo | review
 audience: who, domain background
- outcome: single takeaway
- primary_sources: user files or verified links
- facts_to_preserve: list with source provenance
- length: slide target or inferred reasonable count
- density: speaker-led | reading-first
- art_direction: a subject-specific visual thesis
- interactive_moments: list of audience actions and what changes
- exports: web | pdf | pptx | mp4
+outcome: single takeaway
+primary_sources: user files or verified links
+facts_to_preserve: list with source provenance
+length: slide target or inferred reasonable count
+density: speaker-led | reading-first
+art_direction: a subject-specific visual thesis
+interactive_moments: list of audience actions and what changes
+exports: [offline-html, static-pdf]
 ```
 
 The core deliverable is still the runnable deck; a brief is a planning tool, not an excuse to stop before implementation.

@@ -16,6 +16,10 @@ import mimetypes
 import re
 from pathlib import Path
 import sys
+import tempfile
+from urllib.parse import unquote
+from html.parser import HTMLParser
+from browser_support import launch_browser, frames as get_frames, seek
 
 URL_FUNC = re.compile(r'url\(\s*(["\']?)(.*?)\1\s*\)', flags=re.I|re.S)
 CSS_IMPORT = re.compile(r'@import\s+(?:url\(\s*)?["\']([^"\']+)["\']\s*\)?\s*;', re.I)
@@ -41,7 +45,7 @@ def classify(url):
 
 
 def resolve_file(path, root, base):
-    path=path.split('#',1)[0].split('?',1)[0]
+    path=unquote(htmlmod.unescape(path).split('#',1)[0].split('?',1)[0])
     p=(base/path).resolve()
     if not p.is_relative_to(root): raise BundleError('Local resource escapes deck root: '+str(p))
     if not p.is_file(): raise BundleError('Missing local resource: '+str(p))
@@ -75,6 +79,7 @@ def bundle_html(deck_dir):
     root=deck_dir.resolve(); entry=root/'index.html'
     if not entry.is_file():raise BundleError('Missing index.html: '+str(entry))
     source=entry.read_text(encoding='utf8')
+    if re.search(r'<base\b',source,re.I):raise BundleError('Remove <base>; resource paths must be relative to index.html')
     stats={'styles':0,'scripts':0,'media':0,'bytes_assets':0}
     def link_sub(m):
         tag=m.group(0); a=attributes(tag); rel=a.get('rel','').lower().split()
@@ -83,7 +88,8 @@ def bundle_html(deck_dir):
             if classify(url)!='local':raise BundleError('Remote stylesheet: '+url)
             p=resolve_file(url,root,root); css=bundle_css(p.read_text(encoding='utf8'),root,p.parent,(p,))
             stats['styles']+=1
-            return '<style data-bundled-from="'+htmlmod.escape(url,quote=True)+'">\n'+css+'\n</style>'
+            media=' media="'+htmlmod.escape(a['media'],quote=True)+'"' if 'media' in a else ''
+            return '<style'+media+' data-bundled-from="'+htmlmod.escape(url,quote=True)+'">\n'+css+'\n</style>'
         if any(r in rel for r in ('modulepreload','preload','prefetch')):
             # Prefetch is unnecessary once local resources are inlined.
             return ''
@@ -92,6 +98,8 @@ def bundle_html(deck_dir):
             return tag.replace(url,to_data_url(resolve_file(url,root,root)))
         return tag
     source=CSS_LINK.sub(link_sub,source)
+    source=re.sub(r'(<style\b[^>]*>)(.*?)(</style\s*>)',lambda m:m[1]+bundle_css(m[2],root,root)+m[3],source,flags=re.I|re.S)
+    source=re.sub(r'\bstyle\s*=\s*(["\'])(.*?)\1',lambda m:'style='+m[1]+htmlmod.escape(bundle_css(htmlmod.unescape(m[2]),root,root),quote=True)+m[1],source,flags=re.I|re.S)
     def script_sub(m):
         tag=m.group(0)
         head=tag[:tag.index('>')+1]; a=attributes(head); url=a.get('src')
@@ -102,7 +110,7 @@ def bundle_html(deck_dir):
             raise BundleError('JS has unresolved imports: compile/bundle it (e.g. Vite build) first: '+str(p))
         # Removing src turns an external script into inline content. Preserve type=module.
         head=re.sub(r'\s+src\s*=\s*(["\']).*?\1','',head,flags=re.I|re.S)
-        code=code.replace('</script','<\\/script')
+        code=re.sub(r'</script',lambda m:'<\\/'+m[0][2:],code,flags=re.I)
         stats['scripts']+=1
         return head+'\n'+code+'\n</script>'
     source=SCRIPT.sub(script_sub,source)
@@ -117,6 +125,7 @@ def bundle_html(deck_dir):
             if typ!='local':raise BundleError('Nonportable media URL: '+u)
             p=resolve_file(u,root,root)
             value=to_data_url(p)
+            if '#' in u:value+='#'+u.split('#',1)[1]
             tag=re.sub(r'(?<![\w:-])'+re.escape(field)+r'\s*=\s*(["\'])'+re.escape(u)+r'\1',lambda match:field+'="'+value+'"',tag,count=1,flags=re.I)
             stats['media']+=1;stats['bytes_assets']+=p.stat().st_size
         return tag
@@ -129,7 +138,23 @@ def bundle_html(deck_dir):
     if re.search(r'\bfetch\s*\(\s*["\'](?:\./|\.\./|/)',source):
         raise BundleError('Local fetch() path found. Embed data as JSON in HTML before exporting.')
     source=source.replace('</head>','<meta name="presentation-export" content="single-file-offline">\n</head>',1)
+    validate_offline_markup(source)
     return source,stats
+
+
+def validate_offline_markup(source):
+    """Reject unresolved resource attributes, including unquoted HTML attributes."""
+    class Resources(HTMLParser):
+        def handle_starttag(self,tag,attrs):
+            a=dict(attrs)
+            fields=['src','poster','srcset','data'] if tag in ('script','img','input','source','audio','video','iframe','embed','object','track') else []
+            if tag in ('image','use'):fields+=['href','xlink:href']
+            if tag=='link' and set((a.get('rel') or '').split()) & {'stylesheet','icon','apple-touch-icon','preload','modulepreload'}:fields+=['href']
+            for key in fields:
+                value=a.get(key)
+                if value and (classify(value)!='embedded' or value.startswith('blob:')):
+                    raise BundleError(f'Unresolved {tag} {key}: {value[:160]}')
+    Resources().feed(source)
 
 
 def write_pdf(bundled, destination, include_reveals=False, theme=None, browser_path=None):
@@ -141,29 +166,21 @@ def write_pdf(bundled, destination, include_reveals=False, theme=None, browser_p
     # Because page.set_content uses about:blank, stub the URL history API only in this
     # sandboxed export tab. The actual standalone HTML keeps browser history intact.
     markup=bundled.replace('<head>','<head><script>history.pushState=()=>{};history.replaceState=()=>{};</script>',1)
-    writer=PdfWriter(); frames=[];errors=[]
+    writer=PdfWriter(); frames=[];errors=[];requests=[]
     with sync_playwright() as p:
-        opts={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
-        if browser_path:opts['executable_path']=browser_path
-        browser=p.chromium.launch(**opts)
+        browser=launch_browser(p,browser_path)
         try:
             page=browser.new_page(viewport={'width':1600,'height':900},device_scale_factor=1,reduced_motion='reduce',accept_downloads=False)
             page.on('pageerror',lambda exc:errors.append(str(exc)))
+            page.route('**/*',lambda route:(requests.append(route.request.url),route.abort()))
             page.set_content(markup,wait_until='load')
-            page.wait_for_function('Boolean(window.__presentationExport || window.__deckDebug)',timeout=10000)
-            metadata=page.evaluate('''() => {
-              const e=window.__presentationExport;
-              if (e) return e.frames();
-              return window.__deckDebug.scenes.map((s,i)=>({index:i,steps:s.steps.length,title:s.nav||s.id}));
-            }''')
+            metadata=get_frames(page)
             if not metadata:raise BundleError('Export API returned no slides')
             for row in metadata:
                 slide=row['index']; total=int(row['steps']); steps=range(total) if include_reveals else [total-1]
                 for step in steps:
-                    page.evaluate('''({slide,step,theme}) => {
-                        const e=window.__presentationExport;
-                        if(e) e.goto(slide,step);
-                        else window.__deckDebug.navigate(slide,step,{fromUrl:true});
+                    seek(page,slide,step)
+                    page.evaluate('''({theme}) => {
                         if(theme && ['signal','explainer','nocturne'].includes(theme)) {
                           document.querySelector('#stage').dataset.theme=theme;
                           const picker=document.querySelector('#theme-select');if(picker)picker.value=theme;
@@ -171,7 +188,7 @@ def write_pdf(bundled, destination, include_reveals=False, theme=None, browser_p
                     }''',{'slide':slide,'step':step,'theme':theme})
                     page.evaluate('''async()=>{await document.fonts.ready;
                         // Freeze continuous motion without making reveal elements disappear.
-                        if(window.__presentationExport?.freeze)window.__presentationExport.freeze();
+                        if(window.__presentationExport?.freeze)await window.__presentationExport.freeze();
                     }''')
                     # Default poster snapshot for media should be visible without playback.
                     page.add_style_tag(content='@media print{*{animation:none!important;transition:none!important;scroll-behavior:auto!important} html,body{width:1600px!important;height:900px!important;overflow:hidden!important} #viewport{width:1600px!important;height:900px!important;position:fixed!important;left:0!important;top:0!important} #stage{position:absolute!important;left:0!important;top:0!important;transform:none!important;width:1600px!important;height:900px!important}}') if not frames else None
@@ -180,6 +197,7 @@ def write_pdf(bundled, destination, include_reveals=False, theme=None, browser_p
                     if len(reader.pages)!=1:raise BundleError(f'Expected 1 PDF page, got {len(reader.pages)} for slide {slide+1}')
                     writer.add_page(reader.pages[0]);frames.append({'slide':slide+1,'step':step+1,'title':row['title']})
             if errors:raise BundleError('JavaScript exceptions in PDF run: '+'; '.join(errors))
+            if requests:raise BundleError('Runtime requested unbundled resources: '+'; '.join(requests[:10]))
         finally:browser.close()
     with open(destination,'wb') as f:writer.write(f)
     # Structural gate: exactly expected count, dimensions 16:9, nonblank file.
@@ -204,8 +222,15 @@ def main():
         bundled,stats=bundle_html(args.deck)
         out=args.out.resolve();out.mkdir(parents=True,exist_ok=True)
         html_path=out/'presentation.html'; pdf_path=out/'presentation.pdf'
-        html_path.write_text(bundled,encoding='utf8')
-        frames=write_pdf(bundled,pdf_path,args.include_reveals,args.theme,args.browser)
+        mode='all' if args.include_reveals else 'final'
+        bundled=bundled.replace('</head>',f'<meta name="presentation-pdf-mode" content="{mode}">\n</head>',1)
+        # Leave previous deliverables intact when bundling or rendering fails.
+        with tempfile.TemporaryDirectory(dir=out) as temporary:
+            staging=Path(temporary)
+            frames=write_pdf(bundled,staging/'presentation.pdf',args.include_reveals,args.theme,args.browser)
+            (staging/'presentation.html').write_text(bundled,encoding='utf8')
+            (staging/'presentation.html').replace(html_path)
+            (staging/'presentation.pdf').replace(pdf_path)
         print(json.dumps({'html':str(html_path),'pdf':str(pdf_path),'pages':len(frames),'frames':frames,'inlined':stats,'offline':True},indent=2))
         return 0
     except Exception as e:

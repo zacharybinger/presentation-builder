@@ -1,0 +1,17 @@
+# Local upstream research clones; curated resources live in references/upstream/.
+/resources/
+/@resources/
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+node_modules/
+/dist/
+/build/
+/my-deck/
+/working/
+/working-deck/
+/deliverable/
+/deck-qa/
+/internal-qa/
+/deck-preview/

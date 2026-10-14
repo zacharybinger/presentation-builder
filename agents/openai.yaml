@@ -1,0 +1,4 @@
+interface:
+  display_name: "Presentation Builder"
+  short_description: "Distinctive interactive HTML decks with offline PDF export"
+  default_prompt: "Use $presentation-builder to turn my notes into a distinctive interactive presentation and a static PDF, then validate both."

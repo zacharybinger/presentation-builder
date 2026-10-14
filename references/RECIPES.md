@@ -72,6 +72,9 @@ camera.position.set(0,0,5);
 const geometry=new THREE.SphereGeometry(1,32,24);
 const material=new THREE.MeshStandardMaterial({color:0x72e6c5});
 const mesh=new THREE.Mesh(geometry,material); scene.add(mesh);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const key=new THREE.DirectionalLight(0xffffff, 2);
+key.position.set(3,4,5); scene.add(key);
 // Orbiting / animation must serve the scene's explanation; this is only a scaffold.
 renderer.render(scene,camera);
 function dispose(){ geometry.dispose(); material.dispose(); renderer.dispose(); }

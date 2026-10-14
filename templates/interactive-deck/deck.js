@@ -75,7 +75,7 @@ const scenes = [
             <div class="network-node progressive" data-at="2"><button type="button" data-node="output" class="node-button node-output" aria-label="Inspect output node"><span>OUTPUT</span><strong>03</strong><small>interpreted result</small></button></div>
           </div>
           <div class="network-underlay"><span class="network-tick">BEGIN</span><span class="network-tick">TRANSFORM</span><span class="network-tick">CONCLUDE</span></div>
-          <div class="progressive detail-note" data-at="3">CLICK THE NODES ABOVE TO INSPECT THEIR ROLES ↑</div>
+          <div class="progressive detail-note" data-at="3"><span class="screen-only">CLICK THE NODES ABOVE TO INSPECT THEIR ROLES ↑</span><span class="print-only">INPUT IS THE SELECTED ROLE IN THIS STATIC VIEW</span></div>
         </div>
         <aside class="diagram-detail" data-no-advance>
           <span class="side-index">OBJECT INSPECTOR / 01</span>
@@ -121,7 +121,7 @@ const scenes = [
   },
   {
     id: 'takeaway', nav: 'Takeaway', eyebrow: 'THE TAKEAWAY',
-    title: 'Build the understanding. <em>Not just the slides.</em>',
+    title: 'Build a model <em>people can use.</em>',
     steps: [
       'Make the content accurate and the visual language coherent.',
       'Use interaction where it changes what the audience can discover.',
@@ -166,15 +166,42 @@ function writeUrl(mode = 'push') {
   url.searchParams.set('slide', String(state.slide + 1));
   url.searchParams.set('step', String(state.step + 1));
   url.searchParams.set('theme', state.theme);
-  history[mode === 'replace' ? 'replaceState' : 'pushState']({ ...state }, '', url);
+  try { history[mode === 'replace' ? 'replaceState' : 'pushState']({ ...state }, '', url); }
+  catch (error) { if (location.protocol !== 'file:') throw error; }
 }
 function applyScale() {
   const scale = Math.min(innerWidth / 1600, innerHeight / 900);
   stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 function renderNavigation() {
-  chapterNav.innerHTML = scenes.map((scene, i) => `<button type="button" class="chapter-button${i === state.slide ? ' is-current' : ''}" data-chapter="${i}" aria-label="Go to ${scene.nav}" ${i === state.slide ? 'aria-current="step"' : ''}>${String(i + 1).padStart(2, '0')} <span>${scene.nav}</span></button>`).join('');
-  chapterNav.querySelectorAll('[data-chapter]').forEach(button => button.addEventListener('click', () => navigate(Number(button.dataset.chapter), 0)));
+  chapterNav.replaceChildren();
+  // Long decks need a bounded picker instead of an overflowing row of buttons.
+  if (scenes.length > 6) {
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', 'Go to slide');
+    scenes.forEach((scene, i) => {
+      const option = document.createElement('option');
+      option.value = String(i); option.textContent = `${i + 1}. ${scene.nav}`;
+      select.append(option);
+    });
+    select.value = String(state.slide);
+    select.addEventListener('change', () => navigate(Number(select.value), 0));
+    chapterNav.append(select);
+    return;
+  }
+  scenes.forEach((scene, i) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `chapter-button${i === state.slide ? ' is-current' : ''}`;
+    button.dataset.chapter = String(i);
+    button.setAttribute('aria-label', `Go to ${scene.nav}`);
+    if (i === state.slide) button.setAttribute('aria-current', 'step');
+    button.textContent = `${String(i + 1).padStart(2, '0')} `;
+    const label = document.createElement('span'); label.textContent = scene.nav;
+    button.append(label);
+    button.addEventListener('click', () => navigate(i, 0));
+    chapterNav.append(button);
+  });
 }
 function renderScene() {
   const scene = scenes[state.slide];
@@ -267,7 +294,7 @@ $('#fullscreen').addEventListener('click', async () => {
 });
 // Only advance on truly noninteractive stage clicks, preserving selection and controls.
 stage.addEventListener('click', event => {
-  if (event.target.closest('button,a,input,select,textarea,[data-no-advance],label,[role="slider"]')) return;
+  if (event.target.closest('button,a,input,select,textarea,[data-no-advance],label,[role="slider"],[contenteditable]')) return;
   if (window.getSelection()?.toString()) return;
   advance(1);
 });
